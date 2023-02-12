@@ -8,10 +8,20 @@ const axiosRetry = require('axios-retry')
 // Need NFT_STORAGE_KEY env variable
 require('dotenv').config()
 
+const {
+  Octokit
+} = require("@octokit/rest")
+
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN,
+  userAgent: 'teia status',
+})
+
 const GRAPHQL_ENDPOINT = 'https://api.teia.rocks/v1/graphql'
 const TEZOS_ADDRESS_REGEX = `^(tz1|tz2|tz3|KT1)[0-9a-zA-Z]{33}$`
 
 const BLOCKCHAIN_LEVEL_DIFF = 50 // arbitrary blockchain level comparison
+
 
 axiosRetry(axios, {
   retries: 5,
@@ -384,7 +394,6 @@ const checkGui = async () => {
     if (data.indexOf('<head>') != -1) {
       teiaStatusMessage = TEIA_ONLINE
     }
-    // TODO change order
     let found = false
     let sha
     const result = await axios.head('https://teia.art')
@@ -399,22 +408,11 @@ const checkGui = async () => {
       }
     }
 
-    /* TODO
-        const regex = /<meta name="build-commit" content="([a-z0-9]*)"/i
-        let found = data.match(regex)
-        let sha
-        if (!found) {
-          const result = await axios.head('https://teia.art')
-          if (result.status === 200) {
-            sha = result.headers['x-teia-commit-hash']
-          }
-        } else if (found.length > 1) {
-          sha = found[1]
-        }
-        */
     if (sha) {
-      const commits = await axios.get(`https://api.github.com/repos/teia-community/teia-ui/commits`)
-      if (commits.data[0].sha === sha) {
+      const res = await octokit.request(`GET https://api.github.com/repos/teia-community/teia-ui/commits/main`, {})
+      //const commits = await axios.get(`https://api.github.com/repos/teia-community/teia-ui/commits`)
+      //if (commits.data[0].sha === sha) {
+      if (res && res.data.sha === sha) {
         teiaCommitStatusMessage = TEIA_COMMIT_LATEST
       } else {
         teiaCommitStatusMessage = '**Teia.art is behind the latest GitHub commit.**'
