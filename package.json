@@ -1,0 +1,29 @@
+{
+    "name": "teia-status",
+    "version": "1.0.0",
+    "description": "Status tracker for teia.art",
+    "main": "status.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node status.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/NoRulesJustFeels/teia-status.git"
+    },
+    "author": "",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/NoRulesJustFeels/teia-status/issues"
+    },
+    "homepage": "https://github.com/NoRulesJustFeels/teia-status#readme",
+    "engines": {
+        "node": ">=16.6.0"
+    },
+    "type": "commonjs",
+    "dependencies": {
+        "axios": "^1.3.2",
+        "axios-retry": "^3.4.0",
+        "dotenv": "^16.0.3"
+    }
+}
