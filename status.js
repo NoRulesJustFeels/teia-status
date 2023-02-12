@@ -12,6 +12,7 @@ const {
   Octokit
 } = require("@octokit/rest")
 
+// Need GITHUB_TOKEN env variable
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
   userAgent: 'teia status',
@@ -378,11 +379,9 @@ const checkIpfsGateway = async () => {
   return false
 }
 
-// 'Teia.art is online.' : '**Teia.art is offline.**'
 const TEIA_ONLINE = 'Teia.art is online.'
 let teiaStatusMessage = TEIA_ONLINE
 
-// 'Teia.art has the latest GitHub commit.' : '**Teia.art is behind the latest GitHub commit.**'
 const TEIA_COMMIT_LATEST = 'Teia.art has the latest GitHub commit.'
 let teiaCommitStatusMessage = TEIA_COMMIT_LATEST
 let commitUpToDate = true
@@ -410,8 +409,6 @@ const checkGui = async () => {
 
     if (sha) {
       const res = await octokit.request(`GET https://api.github.com/repos/teia-community/teia-ui/commits/main`, {})
-      //const commits = await axios.get(`https://api.github.com/repos/teia-community/teia-ui/commits`)
-      //if (commits.data[0].sha === sha) {
       if (res && res.data.sha === sha) {
         teiaCommitStatusMessage = TEIA_COMMIT_LATEST
       } else {
