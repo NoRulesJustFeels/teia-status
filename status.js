@@ -127,6 +127,12 @@ const TEZTOK_LEVEL_QUERY = `query MyQuery {
   }
 }`
 
+const TEZTOK_MEDIASTATUS_QUERY = `query MyQuery {
+  tokens(order_by: {minted_at: desc}, limit: 20) {
+    metadata_status
+  }
+}`
+
 const fetchGraphQL = async (operationsDoc, operationName, variables, endpoint) => {
   let result = null
   try {
@@ -286,11 +292,12 @@ const checkTeiaTzktIndexerStatus = async () => {
 
 const TEZTOK_ONLINE = `TezTok indexer is online.`
 const TEZTOK_ERROR = '**TezTok indexer is experiencing technical difficulties.**'
+const TEZTOK_GRAPHQL_SERVER = 'https://teztok.teia.rocks/v1/graphql'
 let teztokIndexerStatusMessage = TEZTOK_ONLINE
 
 const checkTeztokIndexerStatus = async () => {
   try {
-    const response = await fetchGraphQL(TEZTOK_LEVEL_QUERY, 'MyQuery', {}, 'https://teztok.teia.rocks/v1/graphql')
+    const response = await fetchGraphQL(TEZTOK_LEVEL_QUERY, 'MyQuery', {}, TEZTOK_GRAPHQL_SERVER)
     if (response && response.data && response.data.events_aggregate) {
       teztokIndexerStatusMessage = TEZTOK_ONLINE
       if (tzktApiHead) {
@@ -300,6 +307,19 @@ const checkTeztokIndexerStatus = async () => {
           teztokIndexerStatusMessage = `**TezTok indexer is currently delayed by ${delta} blocks. During this period, operations (mint, collect, swap) are prone to fail.**`
         } else {
           teztokIndexerStatusMessage = `TezTok indexer is up to date.`
+          const mediaSTatusResponse = await fetchGraphQL(TEZTOK_MEDIASTATUS_QUERY, 'MyQuery', {}, TEZTOK_GRAPHQL_SERVER)
+          if (mediaSTatusResponse && mediaSTatusResponse.data && mediaSTatusResponse.data.tokens) {
+            let errors = 0
+            for (let index = 0; index < mediaSTatusResponse.data.tokens.length; index++) {
+              const token = mediaSTatusResponse.data.tokens[index]
+              if (token.metadata_status === 'error') { // || token.metadata_status === 'unprocessed') {
+                errors++
+              }
+            }
+            if (errors >= 5) {
+              teztokIndexerStatusMessage = `**TezTok indexer metadata processing errors.**`
+            }
+          }
         }
       } else {
         teztokIndexerStatusMessage = TEZTOK_ERROR
