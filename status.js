@@ -312,11 +312,11 @@ const checkTeztokIndexerStatus = async () => {
             let errors = 0
             for (let index = 0; index < mediaSTatusResponse.data.tokens.length; index++) {
               const token = mediaSTatusResponse.data.tokens[index]
-              if (token.metadata_status === 'error') { // || token.metadata_status === 'unprocessed') {
+              if (token.metadata_status === 'error' || token.metadata_status === 'unprocessed') {
                 errors++
               }
             }
-            if (errors >= 5) {
+            if (errors >= 10) {
               teztokIndexerStatusMessage = `**TezTok indexer metadata processing errors.**`
             }
           }
