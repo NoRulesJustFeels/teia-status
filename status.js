@@ -719,6 +719,60 @@ const checkRpcNodes = async () => {
   checkingRpc = false
 }
 
+const CANNOT_DETERMINE_VOTING_RESULTS = '**Cannot determine Teia Token Distribution Voting results**'
+let daoTokenDistributionVoteMessage = CANNOT_DETERMINE_VOTING_RESULTS
+const POLL_ID = 'QmeJ9ATjn4ge9phDzvpmdZzRZdRoKJdyk4swPiVgaxAx6z'
+const checkDaoTokenDistributionVotes = async () => {
+  try {
+    let teiaUsersList = await downloadList('https://cache.teia.rocks/ipfs/QmNihShvZkXq7aoSSH3Nt1VeLjgGkESr3LoCzShNyV4uzp')
+
+    if (teiaUsersList) {
+      if (!Array.isArray(teiaUsersList)) {
+        daoTokenDistributionVoteMessage = '**Teia user list is not formatted correctly.**'
+      } else {
+        let pollInformation = await downloadList(`https://cache.teia.rocks/ipfs/${POLL_ID}`)
+
+        if (pollInformation["multi"] == "false") {
+          pollInformation["opt1"] = "YES"
+          pollInformation["opt2"] = "NO"
+        }
+
+        let allVotes = await downloadList(`https://api.mainnet.tzkt.io/v1/bigmaps/64367/keys?limit=10000&key.string=${POLL_ID}`)
+
+        let votes = []
+        for (let index = 0; index < allVotes.length; index++) {
+          const vote = allVotes[index]
+          if (teiaUsersList.includes(vote.key.address)) {
+            votes.push(vote)
+          }
+        }
+
+        let results = {}
+        for (let i = 1; i < 4; i++) {
+          let iString = i.toString()
+          results[iString] = { "name": pollInformation["opt" + iString], "votes": 0 }
+        }
+
+        for (let index = 0; index < votes.length; index++) {
+          const vote = votes[index]
+          results[vote["value"]]["votes"] += 1
+        }
+
+        daoTokenDistributionVoteMessage = `${votes.length} Teia users have voted so far (${allVotes.length - votes.length} votes were invalid):`
+
+        const keys = Object.keys(results)
+        for (const key of keys) {
+          const entry = results[key]
+          daoTokenDistributionVoteMessage += `\n- ${entry.name}: ${entry.votes} votes (${(entry.votes * 100 / votes.length).toFixed(1)}%)`
+        }
+      }
+    }
+  } catch (error) {
+    console.error(error)
+    daoTokenDistributionVoteMessage = CANNOT_DETERMINE_VOTING_RESULTS
+  }
+}
+
 // Status text using Discord markdown formatting
 const getStatus = () => {
   return `${teiaStatusMessage}
@@ -735,7 +789,8 @@ ${mempoolMessage}
 ${restrictedListMessage}
 Latest mint is OBJKT ${latestObjtId}.
 Number of OBJKT mints in the last 24 hours: ${mintHistoryCount}
-Number of Teia swaps in the last 24 hours: ${swapHistoryCount}`
+Number of Teia swaps in the last 24 hours: ${swapHistoryCount}
+${daoTokenDistributionVoteMessage}`
 }
 
 let firstTime = true
@@ -758,6 +813,7 @@ const startChecking = async () => {
     await checkMempool()
     await checkRestrictedList()
     //await checkRpcNodes()
+    await checkDaoTokenDistributionVotes()
 
     if (firstTime) {
       firstTime = false
