@@ -773,6 +773,56 @@ const checkDaoTokenDistributionVotes = async () => {
   }
 }
 
+const TEIA_IPFS_GATEWAY_RESPONSIVE = `IPFS gateway (cache.teia.rocks) is responsive.`
+let teiaIpfsGatewayImageMessage = TEIA_IPFS_GATEWAY_RESPONSIVE
+const checkTeiaIpfsGateway = async () => {
+  // We check if the Teia IPFS gateway is up by loading a text file that contains the word: "ok"
+  // This url will never be cached and will always hit the ipfs gateway
+  try {
+    const start = Date.now()
+
+    const url = 'https://cache.teia.rocks/ipfs/Qmf46hrJfcA8TvEMh6VNHM2G4JxsykxfYwcfhRr5ZFT12E'
+    await new Promise(async (resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error(`Timeout when attempting to load '${url}`))
+      }, 15000)
+      try {
+        const response = await axios.get(url)
+        clearTimeout(timer)
+        if (response) {
+          if (response.data.trim() === 'ok') {
+            resolve()
+          } else {
+            reject(new Error(`Invalid content for '${url}`))
+          }
+        } else {
+          reject(new Error(`Could not download '${url}`))
+        }
+      } catch (error) {
+        clearTimeout(timer)
+
+        if (error == null) {
+          reject(new Error(`Unknown error when attempting to load '${url}`))
+        } else {
+          reject(error)
+        }
+      }
+    })
+    const millis = Date.now() - start
+    if (millis < 5000) {
+      teiaIpfsGatewayImageMessage = TEIA_IPFS_GATEWAY_RESPONSIVE
+      return true
+    } else {
+      teiaIpfsGatewayImageMessage = `**IPFS gateway (cache.teia.rocks) is slow.**`
+      return false
+    }
+  } catch (error) {
+    console.error(error.message)
+    teiaIpfsGatewayImageMessage = '**IPFS gateway (cache.teia.rocks) is experiencing technical difficulties.**'
+  }
+  return false
+}
+
 // Status text using Discord markdown formatting
 const getStatus = () => {
   return `${teiaStatusMessage}
@@ -782,6 +832,7 @@ ${teiaTzktStatusMessage}
 ${teztokIndexerStatusMessage}
 ${objkIndexerStatusMessage}
 ${ipfsGatewayImageMessage}
+${teiaIpfsGatewayImageMessage}
 ${nftStorageStatus}
 ${tzktApiStatusMessage}
 ${tzProfilesMessage}
@@ -814,6 +865,7 @@ const startChecking = async () => {
     await checkRestrictedList()
     //await checkRpcNodes()
     await checkDaoTokenDistributionVotes()
+    await checkTeiaIpfsGateway()
 
     if (firstTime) {
       firstTime = false
