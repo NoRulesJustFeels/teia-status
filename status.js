@@ -840,8 +840,7 @@ ${mempoolMessage}
 ${restrictedListMessage}
 Latest mint is OBJKT ${latestObjtId}.
 Number of OBJKT mints in the last 24 hours: ${mintHistoryCount}
-Number of Teia swaps in the last 24 hours: ${swapHistoryCount}
-${daoTokenDistributionVoteMessage}`
+Number of Teia swaps in the last 24 hours: ${swapHistoryCount}`
 }
 
 let firstTime = true
@@ -864,7 +863,7 @@ const startChecking = async () => {
     await checkMempool()
     await checkRestrictedList()
     //await checkRpcNodes()
-    await checkDaoTokenDistributionVotes()
+    //await checkDaoTokenDistributionVotes()
     await checkTeiaIpfsGateway()
 
     if (firstTime) {
