@@ -446,18 +446,25 @@ const checkNftStorage = async () => {
   try {
     let res = await axios.get('https://status.nft.storage/')
     const data = res.data
-    const regex = /data-component-status="([a-z_]*)"/i
-    const found = data.match(regex)
-    if (found && found.length > 1) {
-      if (found[1] === 'operational') {
-        nftStorageStatus = `NFT.Storage is operational.`
+    const regexIncident = /unresolved-incidents/i
+    const foundIncident = data.match(regexIncident)
+    if (foundIncident && foundIncident.length >= 1) {
+      nftStorageStatus = `**NFT.Storage is experiencing an incident.**`
+      return
+    } else {
+      const regexStatus = /data-component-status="([a-z_]*)"/i
+      const foundStatus = data.match(regexStatus)
+      if (foundStatus && foundStatus.length > 1) {
+        if (foundStatus[1] === 'operational') {
+          nftStorageStatus = `NFT.Storage is operational.`
+        } else {
+          nftStorageStatus = `**NFT.Storage is experiencing an outage.**`
+          return
+        }
       } else {
-        nftStorageStatus = `**NFT.Storage is experiencing an outage.**`
+        nftStorageStatus = `**NFT.Storage status is unknown.**`
         return
       }
-    } else {
-      nftStorageStatus = `**NFT.Storage status is unknown.**`
-      return
     }
   } catch (error) {
     console.error(error)
@@ -879,6 +886,12 @@ const startChecking = async () => {
   }, 1 * 60 * 1000)
 }
 startChecking()
+
+const test = async () => {
+  await checkNftStorage()
+  console.log(getStatus())
+}
+//test()
 
 exports.startChecking = startChecking
 exports.getStatus = getStatus
