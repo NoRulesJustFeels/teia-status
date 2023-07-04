@@ -665,6 +665,8 @@ const checkRestrictedList = async () => {
 
 const rpcNodes = []
 let checkingRpc = false
+const CANNOT_DETERMINE_RPC_RESULTS = '**Cannot determine RPC nodes status**'
+let rpcNodesMessage = CANNOT_DETERMINE_RPC_RESULTS
 // List from: https://github.com/versumstudios/rpc-health/blob/main/cron/rpc.js
 const checkRpcNodes = async () => {
   if (checkingRpc) {
@@ -675,11 +677,10 @@ const checkRpcNodes = async () => {
     'mainnet.api.tez.ie',
     'mainnet.smartpy.io',
     'rpc.tzbeta.net',
-    'mainnet-tezos.giganode.io',
     'mainnet.tezos.marigold.dev',
-    //'rpc-mainnet.ateza.io',
-    'eu01-node.teztools.net',
-    'rpc.tzkt.io/mainnet'
+    'rpc.tzkt.io/mainnet',
+    'mainnet.teia.rocks',
+    //'eu01-node.teztools.net'
   ]
   try {
     if (tzktApiHead) {
@@ -713,7 +714,17 @@ const checkRpcNodes = async () => {
             } else {
               console.error(error)
             }
+            rpcNodes.push({ node, error: true })
           })
+      }
+      rpcNodesMessage = `RPC nodes status:`
+      for (let index = 0; index < rpcNodes.length; index++) {
+        const node = rpcNodes[index]
+        if (node.error) {
+          rpcNodesMessage += `\n- **${node.node}: Cannot determine status**`
+        } else {
+          rpcNodesMessage += `\n- ${node.node}: level=${node.level} time=${node.time}, status=${node.status === 200 ? 'OK' : node.status}`
+        }
       }
     }
   } catch (error) {
@@ -845,6 +856,7 @@ ${tzktApiStatusMessage}
 ${tzProfilesMessage}
 ${mempoolMessage}
 ${restrictedListMessage}
+${rpcNodesMessage}
 Latest mint is OBJKT ${latestObjtId}.
 Number of OBJKT mints in the last 24 hours: ${mintHistoryCount}
 Number of Teia swaps in the last 24 hours: ${swapHistoryCount}`
@@ -869,7 +881,7 @@ const startChecking = async () => {
     await checkTzProfiles()
     await checkMempool()
     await checkRestrictedList()
-    //await checkRpcNodes()
+    await checkRpcNodes()
     //await checkDaoTokenDistributionVotes()
     await checkTeiaIpfsGateway()
 
@@ -888,8 +900,10 @@ const startChecking = async () => {
 startChecking()
 
 const test = async () => {
-  await checkNftStorage()
-  console.log(getStatus())
+  await checkTzktStatus()
+  await checkRpcNodes()
+  //console.log(getStatus())
+  console.log(rpcNodesMessage)
 }
 //test()
 
