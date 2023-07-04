@@ -663,7 +663,7 @@ const checkRestrictedList = async () => {
   }
 }
 
-const rpcNodes = []
+let rpcNodes = []
 let checkingRpc = false
 const CANNOT_DETERMINE_RPC_RESULTS = '**Cannot determine RPC nodes status**'
 let rpcNodesMessage = CANNOT_DETERMINE_RPC_RESULTS
@@ -684,6 +684,7 @@ const checkRpcNodes = async () => {
   ]
   try {
     if (tzktApiHead) {
+      rpcNodes = []
       for (let index = 0; index < RPC_NODES.length; index++) {
         const node = RPC_NODES[index]
         let level = -1
