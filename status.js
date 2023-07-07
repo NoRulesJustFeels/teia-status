@@ -22,7 +22,9 @@ const GRAPHQL_ENDPOINT = 'https://api.teia.rocks/v1/graphql'
 const TEZOS_ADDRESS_REGEX = `^(tz1|tz2|tz3|KT1)[0-9a-zA-Z]{33}$`
 
 const BLOCKCHAIN_LEVEL_DIFF = 50 // arbitrary blockchain level comparison
+const BLOCKCHAIN_TIME_DIFF_MINS = 10 // arbitrary blockchain time comparison
 
+const HTTP_OK = 200
 
 axiosRetry(axios, {
   retries: 5,
@@ -208,8 +210,9 @@ let indexerStatusMessage = TEIA_INDEXER_UP_TO_DATE
 const checkIndexerStatus = async () => {
   if (tzktApiHead) {
     try {
-      if (tzktApiHead.knownLevel - tzktApiHead.level > 10) {
-        indexerStatusMessage = `Teia indexer problem: TzKT API has fallen behind the blockchain updates.`
+      const diff = Math.abs(tzktApiHead.knownLevel - tzktApiHead.level)
+      if (diff > BLOCKCHAIN_LEVEL_DIFF) {
+        indexerStatusMessage = `Teia indexer problem: TzKT API is ${diff} blocks behind the blockchain updates.`
         return
       }
 
@@ -416,7 +419,7 @@ const checkGui = async () => {
     let found = false
     let sha
     const result = await axios.head('https://teia.art')
-    if (result.status === 200) {
+    if (result.status === HTTP_OK) {
       sha = result.headers['x-teia-commit-hash']
     }
     if (!sha) {
@@ -572,8 +575,11 @@ const checkTzProfiles = async () => {
     if (tzktApiHead) {
       diffLevel = tzktApiHead.knownLevel - dipdupState.data.dipdup_head[0].level
     }
-    if (diffMins > 10 || diffLevel > 5) {
-      tzProfilesMessage = '**TzProfiles indexer has fallen behind the blockchain updates.**'
+    if (diffLevel > BLOCKCHAIN_LEVEL_DIFF) {
+      tzProfilesMessage = `**TzProfiles indexer is ${diffLevel} blocks behind the blockchain updates.**`
+      return
+    } else if (diffMins > BLOCKCHAIN_TIME_DIFF_MINS) {
+      tzProfilesMessage = `**TzProfiles indexer is ${diffMins} mins the blockchain updates.**`
       return
     }
 
@@ -663,7 +669,7 @@ const checkRestrictedList = async () => {
   }
 }
 
-let rpcNodes = []
+const rpcNodes = []
 let checkingRpc = false
 const CANNOT_DETERMINE_RPC_RESULTS = '**Cannot determine RPC nodes status**'
 let rpcNodesMessage = CANNOT_DETERMINE_RPC_RESULTS
@@ -684,7 +690,6 @@ const checkRpcNodes = async () => {
   ]
   try {
     if (tzktApiHead) {
-      rpcNodes = []
       for (let index = 0; index < RPC_NODES.length; index++) {
         const node = RPC_NODES[index]
         let level = -1
@@ -702,8 +707,9 @@ const checkRpcNodes = async () => {
             if (found) {
               found.level = level
               found.time = time
+              found.error = false
             } else {
-              rpcNodes.push({ level, time, node, status: response.status })
+              rpcNodes.push({ level, time, node, status: response.status, error: false })
             }
           })
           .catch((error) => {
@@ -715,16 +721,31 @@ const checkRpcNodes = async () => {
             } else {
               console.error(error)
             }
-            rpcNodes.push({ node, error: true })
+            const found = rpcNodes.find((e) => e.node === node)
+            if (found) {
+              found.error = true
+            } else {
+              rpcNodes.push({ node, error: true })
+            }
           })
       }
       rpcNodesMessage = `RPC nodes status:`
       for (let index = 0; index < rpcNodes.length; index++) {
         const node = rpcNodes[index]
         if (node.error) {
-          rpcNodesMessage += `\n- **${node.node}: Cannot determine status**`
+          rpcNodesMessage += `\n • **${node.node}: Cannot determine status**`
         } else {
-          rpcNodesMessage += `\n- ${node.node}: level=${node.level} time=${node.time}, status=${node.status === 200 ? 'OK' : node.status}`
+          if (node.status === HTTP_OK) {
+            if (node.level > BLOCKCHAIN_LEVEL_DIFF) {
+              rpcNodesMessage += `\n • **${node.node}: Delayed by ${node.level} blocks**`
+            } else if (Math.ceil(node.time / (1000 * 60)) > BLOCKCHAIN_TIME_DIFF_MINS) {
+              rpcNodesMessage += `\n • **${node.time}: Delayed by ${node.time} milliseconds**`
+            } else {
+              rpcNodesMessage += `\n • ${node.node}: OK`
+            }
+          } else {
+            rpcNodesMessage += `\n • **${node.node}: level=${node.level} time=${node.time}, status=${node.status}**`
+          }
         }
       }
     }
@@ -734,6 +755,7 @@ const checkRpcNodes = async () => {
     } else {
       console.error('error', 'checkRpcNodes')
     }
+    rpcNodesMessage = CANNOT_DETERMINE_RPC_RESULTS
   }
   checkingRpc = false
 }
