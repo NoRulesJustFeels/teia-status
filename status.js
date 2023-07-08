@@ -62,7 +62,7 @@ const downloadList = async (url) => {
     let res = await axios.get(url)
     return res.data
   } catch (error) {
-    console.error(error)
+    logAxiosError(error)
   }
   return null
 }
@@ -154,7 +154,7 @@ const fetchGraphQL = async (operationsDoc, operationName, variables, endpoint) =
     if (error.response && error.response.statusText) {
       console.error(error.response.status, error.response.statusText, error.config.url)
     } else {
-      console.error('error', 'fetchGraphQL', operationName)
+      logAxiosError(error)
     }
   }
 
@@ -193,10 +193,8 @@ const checkTzktStatus = async () => {
     if (error) {
       if (error.response && error.response.statusText) {
         console.error('checkTzktStatus', error.response.status, error.response.statusText, error.config.url)
-      } else if (error.isAxiosError) {
-        console.error('checkTzktStatus', error.message)
       } else {
-        console.error('checkTzktStatus', error)
+        logAxiosError(error)
       }
     }
     tzktApiStatusMessage = TZKT_API_DOWN
@@ -439,7 +437,7 @@ const checkGui = async () => {
       }
     }
   } catch (error) {
-    console.error(error)
+    logAxiosError(error)
     teiaStatusMessage = '**Teia.art is offline.**'
   }
 }
@@ -470,7 +468,7 @@ const checkNftStorage = async () => {
       }
     }
   } catch (error) {
-    console.error(error)
+    logAxiosError(error)
     nftStorageStatus = `**NFT.Storage status is unknown.**`
     return
   }
@@ -593,7 +591,7 @@ const checkTzProfiles = async () => {
     if (error.response && error.response.statusText) {
       console.error(error.response.status, error.response.statusText, error.config.url)
     } else {
-      console.error('error', 'checkTzProfiles')
+      logAxiosError(error)
     }
     tzProfilesMessage = '**TzProfiles is down.**'
   }
@@ -672,7 +670,7 @@ const checkRestrictedList = async () => {
 const rpcNodes = []
 let checkingRpc = false
 const CANNOT_DETERMINE_RPC_RESULTS = '**Cannot determine RPC nodes status**'
-let rpcNodesMessage = CANNOT_DETERMINE_RPC_RESULTS
+let rpcNodesMessage = 'RPC nodes status pending.'
 // List from: https://github.com/versumstudios/rpc-health/blob/main/cron/rpc.js
 const checkRpcNodes = async () => {
   if (checkingRpc) {
@@ -886,31 +884,36 @@ Number of Teia swaps in the last 24 hours: ${swapHistoryCount}`
 }
 
 let firstTime = true
+let checking = false
 const startChecking = async () => {
 
   const checkAll = async () => {
-    console.log('Checking status...')
-    await checkTzktStatus()
-    await getSwapHistory()
-    await getMintHistory()
-    await checkIpfsGateway()
-    await checkIndexerStatus()
-    await checkTeiaTzktIndexerStatus()
-    await checkTeztokIndexerStatus()
-    await checkObjktIndexerStatus()
-    await getLastestId()
-    await checkGui()
-    await checkNftStorage()
-    await checkTzProfiles()
-    await checkMempool()
-    await checkRestrictedList()
-    await checkRpcNodes()
-    //await checkDaoTokenDistributionVotes()
-    await checkTeiaIpfsGateway()
+    if (!checking) {
+      checking = true
+      console.log('Checking status...')
+      await checkTzktStatus()
+      await getSwapHistory()
+      await getMintHistory()
+      await checkIpfsGateway()
+      await checkIndexerStatus()
+      await checkTeiaTzktIndexerStatus()
+      await checkTeztokIndexerStatus()
+      await checkObjktIndexerStatus()
+      await getLastestId()
+      await checkGui()
+      await checkNftStorage()
+      await checkTzProfiles()
+      await checkMempool()
+      await checkRestrictedList()
+      await checkRpcNodes()
+      //await checkDaoTokenDistributionVotes()
+      await checkTeiaIpfsGateway()
 
-    if (firstTime) {
-      firstTime = false
-      console.log(getStatus())
+      if (firstTime) {
+        firstTime = false
+        console.log(getStatus())
+      }
+      checking = false
     }
   }
   checkAll()
