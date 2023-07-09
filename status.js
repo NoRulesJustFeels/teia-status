@@ -218,7 +218,7 @@ const checkIndexerStatus = async () => {
       const tzktNode = dipdupHeadStatus.data.dipdup_head_status.find(({ status }) => status === 'OK')
 
       if (!tzktNode) {
-        indexerStatusMessage = '**Cannot determine the Teia indexer head status.**'
+        indexerStatusMessage = '**Unknown Teia indexer head status.**'
         return
       }
 
@@ -394,7 +394,7 @@ const checkIpfsGateway = async () => {
       return false
     }
   } catch (error) {
-    console.error(error.message)
+    logAxiosError(error)
     ipfsGatewayImageMessage = '**IPFS gateway (nftstorage.link) is experiencing technical difficulties.**'
   }
   return false
@@ -633,7 +633,7 @@ const checkMempool = async () => {
     mempoolMessage = MEMPOOL_MESSAGE_NOMINAL
   } catch (error) {
     console.error(error)
-    mempoolMessage = '**Mempool status cannot be quieried.**'
+    mempoolMessage = '**Mempool status unknown.**'
   }
   return mempoolMessage
 }
@@ -669,7 +669,7 @@ const checkRestrictedList = async () => {
 
 const rpcNodes = []
 let checkingRpc = false
-const CANNOT_DETERMINE_RPC_RESULTS = '**Cannot determine RPC nodes status**'
+const CANNOT_DETERMINE_RPC_RESULTS = '**Unknown RPC nodes status**'
 let rpcNodesMessage = 'RPC nodes status pending.'
 // List from: https://github.com/versumstudios/rpc-health/blob/main/cron/rpc.js
 const checkRpcNodes = async () => {
@@ -731,7 +731,7 @@ const checkRpcNodes = async () => {
       for (let index = 0; index < rpcNodes.length; index++) {
         const node = rpcNodes[index]
         if (node.error) {
-          rpcNodesMessage += `\n • **${node.node}: Cannot determine status**`
+          rpcNodesMessage += `\n • **${node.node}: Unknown**`
         } else {
           if (node.status === HTTP_OK) {
             if (node.level > BLOCKCHAIN_LEVEL_DIFF) {
@@ -751,14 +751,14 @@ const checkRpcNodes = async () => {
     if (error.response && error.response.statusText) {
       console.error(error.response.status, error.response.statusText, error.config.url)
     } else {
-      console.error('error', 'checkRpcNodes')
+      logAxiosError(error)
     }
     rpcNodesMessage = CANNOT_DETERMINE_RPC_RESULTS
   }
   checkingRpc = false
 }
 
-const CANNOT_DETERMINE_VOTING_RESULTS = '**Cannot determine Teia Token Distribution Voting results**'
+const CANNOT_DETERMINE_VOTING_RESULTS = '**Unknown Teia Token Distribution Voting results**'
 let daoTokenDistributionVoteMessage = CANNOT_DETERMINE_VOTING_RESULTS
 const POLL_ID = 'QmeJ9ATjn4ge9phDzvpmdZzRZdRoKJdyk4swPiVgaxAx6z'
 const checkDaoTokenDistributionVotes = async () => {
@@ -856,7 +856,7 @@ const checkTeiaIpfsGateway = async () => {
       return false
     }
   } catch (error) {
-    console.error(error.message)
+    logAxiosError(error)
     teiaIpfsGatewayImageMessage = '**IPFS gateway (cache.teia.rocks) is experiencing technical difficulties.**'
   }
   return false
