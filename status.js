@@ -210,7 +210,7 @@ const checkIndexerStatus = async () => {
     try {
       const diff = Math.abs(tzktApiHead.knownLevel - tzktApiHead.level)
       if (diff > BLOCKCHAIN_LEVEL_DIFF) {
-        indexerStatusMessage = `Teia indexer problem: TzKT API is ${diff} blocks behind the blockchain updates.`
+        indexerStatusMessage = `Teia indexer problem: TzKT API is ${diff} blocks behind.`
         return
       }
 
@@ -574,10 +574,10 @@ const checkTzProfiles = async () => {
       diffLevel = tzktApiHead.knownLevel - dipdupState.data.dipdup_head[0].level
     }
     if (diffLevel > BLOCKCHAIN_LEVEL_DIFF) {
-      tzProfilesMessage = `**TzProfiles indexer is ${diffLevel} blocks behind the blockchain updates.**`
+      tzProfilesMessage = `**TzProfiles indexer is ${diffLevel} blocks behind.**`
       return
     } else if (diffMins > BLOCKCHAIN_TIME_DIFF_MINS) {
-      tzProfilesMessage = `**TzProfiles indexer is ${diffMins} mins the blockchain updates.**`
+      tzProfilesMessage = `**TzProfiles indexer is ${diffMins} mins behind.**`
       return
     }
 
