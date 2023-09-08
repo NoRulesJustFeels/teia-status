@@ -705,6 +705,7 @@ const checkRpcNodes = async () => {
             if (found) {
               found.level = level
               found.time = time
+              found.status = response.status
               found.error = false
             } else {
               rpcNodes.push({ level, time, node, status: response.status, error: false })
@@ -883,37 +884,55 @@ Number of OBJKT mints in the last 24 hours: ${mintHistoryCount}
 Number of Teia swaps in the last 24 hours: ${swapHistoryCount}`
 }
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 let firstTime = true
 let checking = false
+let checkingCounter = 0
 const startChecking = async () => {
 
   const checkAll = async () => {
-    if (!checking) {
-      checking = true
-      console.log('Checking status...')
-      await checkTzktStatus()
-      await getSwapHistory()
-      await getMintHistory()
-      await checkIpfsGateway()
-      await checkIndexerStatus()
-      await checkTeiaTzktIndexerStatus()
-      await checkTeztokIndexerStatus()
-      await checkObjktIndexerStatus()
-      await getLastestId()
-      await checkGui()
-      await checkNftStorage()
-      await checkTzProfiles()
-      await checkMempool()
-      await checkRestrictedList()
-      await checkRpcNodes()
-      //await checkDaoTokenDistributionVotes()
-      await checkTeiaIpfsGateway()
-
-      if (firstTime) {
-        firstTime = false
-        console.log(getStatus())
+    try {
+      if (checkingCounter > 5) {
+        checkingCounter = 0
+        checking = false
       }
+      if (!checking) {
+        checking = true
+        console.log('Checking status...')
+        await checkTzktStatus()
+        await getSwapHistory()
+        await getMintHistory()
+        await checkIpfsGateway()
+        await checkIndexerStatus()
+        await checkTeiaTzktIndexerStatus()
+        await checkTeztokIndexerStatus()
+        await checkObjktIndexerStatus()
+        await getLastestId()
+        await checkGui()
+        await checkNftStorage()
+        await checkTzProfiles()
+        await checkMempool()
+        await checkRestrictedList()
+        await checkRpcNodes()
+        //await checkDaoTokenDistributionVotes()
+        await checkTeiaIpfsGateway()
+
+        if (firstTime) {
+          firstTime = false
+          console.log(getStatus())
+        }
+        checking = false
+      } else {
+        console.log('checkAll checking')
+        checkingCounter++
+      }
+    } catch (error) {
+      console.error(error)
       checking = false
+      checkingCounter = 0
     }
   }
   checkAll()
