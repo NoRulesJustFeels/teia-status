@@ -182,7 +182,7 @@ const checkTzktStatus = async () => {
     const apiResponse = await axios({
       method: 'get',
       url: 'https://api.tzkt.io/v1/accounts/tz1XtjZTzEM6EQ3TnUPUQviCD6WfcsZRHXbj/operations?sort=0&limit=2',
-      timeout: 10000
+      timeout: 20000
     })
     if (!apiResponse) {
       tzktApiStatusMessage = TZKT_API_DOWN
