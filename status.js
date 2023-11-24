@@ -168,12 +168,17 @@ const fetchGraphQL = async (operationsDoc, operationName, variables, endpoint) =
 
 const TZKT_API_ONLINE = 'TzKT API is online.'
 const TZKT_API_DOWN = '**TzKT API is down.**'
+const TZKT_TIMEOUT = 30000
 
 let tzktApiHead = null
 let tzktApiStatusMessage = TZKT_API_ONLINE
 const checkTzktStatus = async () => {
   try {
-    const tzktResponse = await axios.get('https://api.tzkt.io/v1/head')
+    const tzktResponse = await axios({
+      method: 'get',
+      url: 'https://api.tzkt.io/v1/head',
+      timeout: TZKT_TIMEOUT
+    })
     if (!tzktResponse) {
       tzktApiStatusMessage = TZKT_API_DOWN
       return
@@ -182,7 +187,7 @@ const checkTzktStatus = async () => {
     const apiResponse = await axios({
       method: 'get',
       url: 'https://api.tzkt.io/v1/accounts/tz1XtjZTzEM6EQ3TnUPUQviCD6WfcsZRHXbj/operations?sort=0&limit=2',
-      timeout: 20000
+      timeout: TZKT_TIMEOUT
     })
     if (!apiResponse) {
       tzktApiStatusMessage = TZKT_API_DOWN
