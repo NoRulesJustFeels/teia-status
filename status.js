@@ -645,6 +645,7 @@ const checkMempool = async () => {
 
 const RESTRICTED_LIST_WELL_FORMATTED = 'Restricted list is well-formatted.'
 let restrictedListMessage = RESTRICTED_LIST_WELL_FORMATTED
+let restrictedNumber = 0
 
 const checkRestrictedList = async () => {
   try {
@@ -663,12 +664,48 @@ const checkRestrictedList = async () => {
             return
           }
         }
+        restrictedNumber = restrictedList.length
         restrictedListMessage = RESTRICTED_LIST_WELL_FORMATTED
       }
     }
   } catch (error) {
     console.error(error)
     restrictedListMessage = '**Restricted list could not be retrieved.**'
+    estrictedNumber = 0
+  }
+}
+
+let nsfwNumber = 0
+
+const checkNSFWList = async () => {
+  try {
+    let nsfwList = await downloadList(
+      'https://raw.githubusercontent.com/teia-community/teia-report/main/nsfw.json'
+    )
+
+    if (nsfwList) {
+      nsfwNumber = nsfwList.length
+    }
+  } catch (error) {
+    console.error(error)
+    nsfwNumber = 0
+  }
+}
+
+let photosensitiveNumber = 0
+
+const checkPhotosensitiveList = async () => {
+  try {
+    let photosensitiveList = await downloadList(
+      'https://raw.githubusercontent.com/teia-community/teia-report/main/photosensitive.json'
+    )
+
+    if (photosensitiveList) {
+      photosensitiveNumber = photosensitiveList.length
+    }
+  } catch (error) {
+    console.error(error)
+    photosensitiveNumber = 0
   }
 }
 
@@ -886,7 +923,11 @@ ${restrictedListMessage}
 ${rpcNodesMessage}
 Latest mint is OBJKT ${latestObjtId}.
 Number of OBJKT mints in the last 24 hours: ${mintHistoryCount}
-Number of Teia swaps in the last 24 hours: ${swapHistoryCount}`
+Number of Teia swaps in the last 24 hours: ${swapHistoryCount}
+Content moderation:
+\t• ${restrictedNumber} restricted accounts
+\t• ${nsfwNumber} NSFW OBJKTs
+\t• ${photosensitiveNumber} photosensitive OBJKTs`
 }
 
 function delay(ms) {
@@ -921,6 +962,8 @@ const startChecking = async () => {
         await checkTzProfiles()
         await checkMempool()
         await checkRestrictedList()
+        await checkNSFWList()
+        await checkPhotosensitiveList()
         await checkRpcNodes()
         //await checkDaoTokenDistributionVotes()
         await checkTeiaIpfsGateway()
