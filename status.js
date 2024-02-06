@@ -186,7 +186,7 @@ const checkTzktStatus = async () => {
     tzktApiHead = tzktResponse.data
     const apiResponse = await axios({
       method: 'get',
-      url: 'https://api.tzkt.io/v1/accounts/tz1XtjZTzEM6EQ3TnUPUQviCD6WfcsZRHXbj/operations?sort=0&limit=2',
+      url: 'https://api.tzkt.io/v1/accounts/tz1XtjZTzEM6EQ3TnUPUQviCD6WfcsZRHXbj/balance',
       timeout: TZKT_TIMEOUT
     })
     if (!apiResponse) {
@@ -206,8 +206,8 @@ const checkTzktStatus = async () => {
   }
 }
 
-const TEIA_INDEXER_UP_TO_DATE = `Teia indexer is up to date.`
-const TEIA_INDEXER_ERROR = '**Teia indexer is experiencing technical difficulties.**'
+const TEIA_INDEXER_UP_TO_DATE = `Teia legacy indexer is up to date.`
+const TEIA_INDEXER_ERROR = '**Teia legacy indexer is experiencing technical difficulties.**'
 let indexerStatusMessage = TEIA_INDEXER_UP_TO_DATE
 
 const checkIndexerStatus = async () => {
@@ -215,7 +215,7 @@ const checkIndexerStatus = async () => {
     try {
       const diff = Math.abs(tzktApiHead.knownLevel - tzktApiHead.level)
       if (diff > BLOCKCHAIN_LEVEL_DIFF) {
-        indexerStatusMessage = `Teia indexer problem: TzKT API is ${diff} blocks behind.`
+        indexerStatusMessage = `Teia legacy indexer problem: TzKT API is ${diff} blocks behind.`
         return
       }
 
@@ -223,7 +223,7 @@ const checkIndexerStatus = async () => {
       const tzktNode = dipdupHeadStatus.data.dipdup_head_status.find(({ status }) => status === 'OK')
 
       if (!tzktNode) {
-        indexerStatusMessage = '**Unknown Teia indexer head status.**'
+        indexerStatusMessage = '**Unknown Teia legacy indexer head status.**'
         return
       }
 
@@ -239,7 +239,7 @@ const checkIndexerStatus = async () => {
         const delta = Math.abs(tzktApiHead.level - mainnetNode.level)
 
         if (delta > BLOCKCHAIN_LEVEL_DIFF) {
-          indexerStatusMessage = `**Teia indexer is currently delayed by ${delta} blocks. During this period, operations (mint, collect, swap) are prone to fail.**`
+          indexerStatusMessage = `**Teia legacy indexer is currently delayed by ${delta} blocks. During this period, operations (mint, collect, swap) are prone to fail.**`
         } else {
           indexerStatusMessage = TEIA_INDEXER_UP_TO_DATE
         }
@@ -414,7 +414,7 @@ let commitUpToDate = true
 
 const checkGui = async () => {
   try {
-    let res = await axios.get('https://teia.art')
+    let res = await axios.get('https://teia.art', { timeout: 10000 })
     const data = res.data
     if (data.indexOf('<head>') != -1) {
       teiaStatusMessage = TEIA_ONLINE
