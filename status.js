@@ -18,7 +18,7 @@ const octokit = new Octokit({
   userAgent: 'teia status',
 })
 
-const GRAPHQL_ENDPOINT = 'https://api.teia.rocks/v1/graphql'
+const GRAPHQL_ENDPOINT = 'https://teztok.teia.art/v1/graphql'
 const TEZOS_ADDRESS_REGEX = `^(tz1|tz2|tz3|KT1)[0-9a-zA-Z]{33}$`
 
 const BLOCKCHAIN_LEVEL_DIFF = 50 // arbitrary blockchain level comparison
@@ -296,9 +296,9 @@ const checkTeiaTzktIndexerStatus = async () => {
   }
 }
 
-const TEZTOK_ONLINE = `TezTok indexer is online.`
-const TEZTOK_ERROR = '**TezTok indexer is experiencing technical difficulties.**'
-const TEZTOK_GRAPHQL_SERVER = 'https://teztok.teia.rocks/v1/graphql'
+const TEZTOK_ONLINE = `Teia TezTok indexer is online.`
+const TEZTOK_ERROR = '**Teia TezTok indexer is experiencing technical difficulties.**'
+const TEZTOK_GRAPHQL_SERVER = 'https://teztok.teia.art/v1/graphql'
 let teztokIndexerStatusMessage = TEZTOK_ONLINE
 
 const checkTeztokIndexerStatus = async () => {
@@ -310,9 +310,9 @@ const checkTeztokIndexerStatus = async () => {
         const delta = Math.abs(tzktApiHead.level - response.data.events_aggregate.aggregate.max.level)
 
         if (delta > BLOCKCHAIN_LEVEL_DIFF) {
-          teztokIndexerStatusMessage = `**TezTok indexer is currently delayed by ${delta} blocks. During this period, operations (mint, collect, swap) are prone to fail.**`
+          teztokIndexerStatusMessage = `**Teia TezTok indexer is currently delayed by ${delta} blocks. During this period, operations (mint, collect, swap) are prone to fail.**`
         } else {
-          teztokIndexerStatusMessage = `TezTok indexer is up to date.`
+          teztokIndexerStatusMessage = `Teia TezTok indexer is up to date.`
           const mediaSTatusResponse = await fetchGraphQL(TEZTOK_MEDIASTATUS_QUERY, 'MyQuery', {}, TEZTOK_GRAPHQL_SERVER)
           if (mediaSTatusResponse && mediaSTatusResponse.data && mediaSTatusResponse.data.tokens) {
             let errors = 0
@@ -323,7 +323,7 @@ const checkTeztokIndexerStatus = async () => {
               }
             }
             if (errors >= 10) {
-              teztokIndexerStatusMessage = `**TezTok indexer metadata processing errors.**`
+              teztokIndexerStatusMessage = `**Teia TezTok indexer metadata processing errors.**`
             }
           }
         }
@@ -331,7 +331,7 @@ const checkTeztokIndexerStatus = async () => {
         teztokIndexerStatusMessage = TEZTOK_ERROR
       }
     } else {
-      teztokIndexerStatusMessage = `**TezTok indexer is offline.**`
+      teztokIndexerStatusMessage = `**Teia TezTok indexer is offline.**`
     }
   } catch (error) {
     console.error(error)
@@ -496,12 +496,15 @@ const checkNftStorage = async () => {
 
 let latestObjtId = 701552
 
-const LATEST_ID_QUERY = `
-  query LatestFeed {
-    token(order_by: {id: desc}, limit: 1, where: {artifact_uri: {_neq: ""}}) {
-      id
-    }
-  }`
+const LATEST_ID_QUERY = `query LatestFeed {
+  token: tokens(
+    where: {artifact_uri: {_neq: ""}}
+    order_by: {minted_at: desc}
+    limit: 1
+  ) {
+    id: token_id
+  }
+}`
 
 const getLastestId = async () => {
   try {
@@ -515,12 +518,16 @@ const getLastestId = async () => {
 
 let swapHistoryCount = 0
 
-const SWAP_HISTORY_QUERY = `
-  query swapHistory($timestamp: timestamptz!) {
-    swap(where: {contract_address: {_eq: "KT1PHubm9HtyQEJ4BBpMTVomq6mhbfNZ9z5w"}, timestamp: {_gte: $timestamp}}) {
-      token_id
+const SWAP_HISTORY_QUERY = `query swapHistory($timestamp: timestamptz!) {
+  swap: events(
+    where: {type: {_in: ["TEIA_SWAP"]}, timestamp: {_gte: $timestamp}}
+    order_by: {timestamp: desc}
+  ) {
+    token {
+      id: token_id
     }
-  }`
+  }
+}`
 
 const getSwapHistory = async () => {
   try {
@@ -537,12 +544,14 @@ const getSwapHistory = async () => {
 
 let mintHistoryCount = 0
 
-const MINT_HISTORY_QUERY = `
-  query mintHistory($timestamp: timestamptz!) {
-    token(where: {artifact_uri: {_neq: ""}, timestamp: {_gte: $timestamp}}) {
-      id
-    }
-  }`
+const MINT_HISTORY_QUERY = `query mintHistory($timestamp: timestamptz!) {
+  token: tokens(
+    where: {artifact_uri: {_neq: ""}, minted_at: {_gte: $timestamp}}
+    order_by: {minted_at: desc}
+  ) {
+    id: token_id
+  }
+}`
 
 const getMintHistory = async () => {
   try {
@@ -909,7 +918,6 @@ const checkTeiaIpfsGateway = async () => {
 const getStatus = () => {
   return `${teiaStatusMessage}
 ${teiaCommitStatusMessage}
-${indexerStatusMessage}
 ${teiaTzktStatusMessage}
 ${teztokIndexerStatusMessage}
 ${objkIndexerStatusMessage}
@@ -952,7 +960,7 @@ const startChecking = async () => {
         await getSwapHistory()
         await getMintHistory()
         await checkIpfsGateway()
-        await checkIndexerStatus()
+        // await checkIndexerStatus()
         await checkTeiaTzktIndexerStatus()
         await checkTeztokIndexerStatus()
         await checkObjktIndexerStatus()
