@@ -21,7 +21,7 @@ const octokit = new Octokit({
 const GRAPHQL_ENDPOINT = 'https://teztok.teia.art/v1/graphql'
 const TEZOS_ADDRESS_REGEX = `^(tz1|tz2|tz3|KT1)[0-9a-zA-Z]{33}$`
 
-const BLOCKCHAIN_LEVEL_DIFF = 50 // arbitrary blockchain level comparison
+const BLOCKCHAIN_LEVEL_DIFF = 70 // arbitrary blockchain level comparison
 const BLOCKCHAIN_TIME_DIFF_MINS = 10 // arbitrary blockchain time comparison
 
 const HTTP_OK = 200
